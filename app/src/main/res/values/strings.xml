@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">vkapi</string>
+    <string name="add_pub_btn">Добавить группу</string>
+    <string name="pub_ref_text">Адрес группы</string>
+    <string name="add_new_pub_btn">Добавить группу</string>
+    <string name="back_btn">Назад</string>
+    <string name="params">⋮</string>
+    <string name="token_info">Токен приложения:</string>
+    <string name="save">сохранить</string>
+    <string name="settings">настройки</string>
+</resources>
