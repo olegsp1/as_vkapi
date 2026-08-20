@@ -8,4 +8,5 @@
     <string name="token_info">Токен приложения:</string>
     <string name="save">сохранить</string>
     <string name="settings">настройки</string>
+    <string name="deletedata">очистить медиа</string>
 </resources>

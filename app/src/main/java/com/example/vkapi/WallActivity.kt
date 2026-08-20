@@ -256,7 +256,7 @@ class WallActivity : AppCompatActivity() {
                         .format(Date())
 
                     val request = YoutubeDLRequest(item.uri).apply {
-                        addOption("-o", downloadDir.absolutePath + "/%(title)s_$dateStamp.%(ext)s")
+                        addOption("-o", downloadDir.absolutePath + "/%(title)s_${dateStamp}.%(ext)s")
                         // ограничиваем формат, чтобы результат был одним готовым mp4 файлом
                         addOption("-f", "best[ext=mp4]/best")
                     }

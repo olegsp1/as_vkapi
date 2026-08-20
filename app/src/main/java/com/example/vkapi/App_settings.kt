@@ -2,13 +2,16 @@ package com.example.vkapi
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Environment
 import android.widget.Button
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.textfield.TextInputEditText
+import java.io.File
 
 class AppSettings : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -31,10 +34,28 @@ class AppSettings : AppCompatActivity() {
         val token_input: TextInputEditText = findViewById(R.id.token_input_area)
         val save_button: Button = findViewById(R.id.save_settings_btn)
         val back_button: Button = findViewById(R.id.setting_back_button)
+        val clear_btn: Button = findViewById(R.id.clear_media_btn)
+        val stor_view: TextView = findViewById(R.id.storage_view)
+
+        val downloadDir = File(
+            getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS),
+            "youtubedl-android"
+        )
 
         back_button.setOnClickListener {
             val intent = Intent(this, MainActivity::class.java)
             startActivity(intent)
+        }
+
+        clear_btn.setOnClickListener {
+            if (downloadDir.exists() && downloadDir.isDirectory) {
+                downloadDir.listFiles()?.forEach { file ->
+                    file.deleteRecursively() // удаляет каждый файл или подпапку внутри
+                }
+                val size = downloadDir.walkTopDown().filter { it.isFile }.map { it.length() }.sum() / 1024 / 1024
+                stor_view.text = "$size MB"
+                Toast.makeText(this@AppSettings, "файлы удаленны", Toast.LENGTH_SHORT).show()
+            }
         }
 
         save_button.setOnClickListener {
@@ -50,6 +71,11 @@ class AppSettings : AppCompatActivity() {
             else {
                 Toast.makeText(this@AppSettings, "поля пусты", Toast.LENGTH_SHORT).show()
             }
+        }
+
+        if (downloadDir.exists() && downloadDir.isDirectory) {
+            val size = downloadDir.walkTopDown().filter { it.isFile }.map { it.length() }.sum() / 1024 / 1024
+            stor_view.text = "$size MB"
         }
     }
 }
