@@ -32,8 +32,6 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-
-// newsfeed.search + start_time = last_date
 suspend fun getWall(domain: String, offset: Int, token: String): String = withContext(Dispatchers.IO) {
     val url = "https://api.vk.com/method/wall.get" +
             "?domain=$domain" +
@@ -87,6 +85,16 @@ private fun bestPhotoUrl(sizes: JSONArray?): String? {
     return bestUrl
 }
 
+suspend fun getLPD(json: String): Long {
+    val root = JSONObject(json)
+    var date: Long = 0
+    if (root.optString("error").isEmpty()) {
+        val item = root.getJSONObject("response").getJSONArray("items").getJSONObject(0)
+        date = item.getLong("date")
+    }
+    return date
+}
+
 suspend fun parseWall(json: String): List<Post> {
     val posts = mutableListOf<Post>()
     val root = JSONObject(json)
@@ -133,6 +141,8 @@ class WallActivity : AppCompatActivity() {
             insets
         }
         val token: String = (application as App).token
+
+        val db = DBHelper(this, null)
 
         val name: TextView = findViewById(R.id.name)
         val pic: ImageView = findViewById(R.id.picture)
@@ -187,7 +197,17 @@ class WallActivity : AppCompatActivity() {
         next.setOnClickListener {
             offset += 10
             update()
-
+            if (offset < 20) {
+                lifecycleScope.launch {
+                    coroutineScope {
+                        launch {
+                            val json = getWall(ref, offset, token)
+                            db.updateLastPostTime(ref, getLPD(json))
+                        }
+                    }
+                }
+                Log.d("posts", "посты $ref прочитанны")
+            }
         }
 
         back.setOnClickListener {

@@ -11,6 +11,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="8dp"
+        android:contentDescription="pubImage"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -33,4 +34,14 @@
         android:text="@string/params"
         app:layout_constraintStart_toEndOf="@+id/name"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/unreadedPosts"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        android:layout_marginBottom="16dp"
+        android:text="000"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/picture" />
 </androidx.constraintlayout.widget.ConstraintLayout>

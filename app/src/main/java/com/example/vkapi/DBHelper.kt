@@ -19,7 +19,8 @@ class DBHelper(val context: Context, val factory: SQLiteDatabase.CursorFactory?)
         oldVersion: Int,
         newVersion: Int
     ) {
-        db!!.execSQL("drop table if exists pubs")
+        db?.execSQL("drop table if exists pubs")
+        db?.execSQL("drop table if exists app_settings")
         onCreate(db)
     }
 
@@ -86,5 +87,17 @@ class DBHelper(val context: Context, val factory: SQLiteDatabase.CursorFactory?)
         val db = writableDatabase
         db.delete("pubs", "ref=?", arrayOf(ref))
         db.close()
+    }
+
+    fun updateLastPostTime(ref: String, lpd: Long) {
+        val db = this.writableDatabase
+        val values = ContentValues().apply {
+            put("last_post", lpd)
+        }
+
+        val whereClause = "ref = ?"
+        val whereArgs = arrayOf(ref)
+
+        db.update("pubs", values, whereClause, whereArgs)
     }
 }

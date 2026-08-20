@@ -40,14 +40,57 @@ suspend fun getGroupInfo(domain: String, token: String): String = withContext(Di
     }
 }
 
-fun parseGroupInfo(json: String, pub: Pub): PubView {
+suspend fun getManyPosts(domain: String, token: String): String = withContext(Dispatchers.IO) {
+    val url = "https://api.vk.com/method/wall.get" +
+            "?domain=$domain" +
+            "&count=100" +
+            "&offset=0" +
+            "&access_token=$token" +
+            "&v=5.199"
+
+    val request = Request.Builder()
+        .url(url)
+        .build()
+
+    client.newCall(request).execute().use { response ->
+        response.body?.string() ?: ""
+    }
+}
+
+suspend fun countUnreadPosts(pub: Pub, token: String): Int {
+    var count = 0
+    val json = getManyPosts(pub.ref, token)
+    Log.d("getmanyposts", json)
+    val root = JSONObject(json)
+    if (root.optString("error").isEmpty()) {
+        val items = root.getJSONObject("response").getJSONArray("items")
+
+        for (i in 0 until items.length()) {
+            val item = items.getJSONObject(i)
+            val date = item.getLong("date")
+            Log.d("getmanyposts", "$date . ${pub.last_post_date}")
+            if (date > pub.last_post_date) {
+                count += 1
+            }
+            else {
+                break
+            }
+        }
+    }
+    else {
+        Log.d("getmanyposts", root.optString("error"))
+    }
+    return count
+}
+
+suspend fun parseGroupInfo(json: String, pub: Pub, token: String): PubView {
     val jsonObject = JSONObject(json)
     val groups = jsonObject.getJSONObject("response").getJSONArray("groups")
     val group = groups.getJSONObject(0)
 
     return PubView(
         ref = pub.ref,
-        last_post_date = pub.last_post_date,
+        unreadPosts = countUnreadPosts(pub, token),
         name = group.getString("name"),
         pic = group.getString("photo_200")
     )
@@ -99,13 +142,13 @@ class MainActivity : AppCompatActivity() {
         val all_pub = mutableListOf<PubView>()
 
         lifecycleScope.launch {
-            all_pub_inf.chunked(5).forEach { batch ->
+            all_pub_inf.chunked(2).forEach { batch ->
                 coroutineScope {
                     batch.forEach { i ->
                         launch {
                             try {
                                 val json = getGroupInfo(i.ref, token)
-                                val fullpub = parseGroupInfo(json, i)
+                                val fullpub = parseGroupInfo(json, i, token)
 
                                 all_pub.add(fullpub)
                                 adapter.updateData(all_pub.toList())

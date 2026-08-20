@@ -21,6 +21,7 @@ class GroupsAdapter(initialData: List<PubView>, var context: Context) :  Recycle
         val name: TextView = view.findViewById(R.id.name)
         val place: ConstraintLayout = view.findViewById(R.id.Groupe)
         val params: TextView = view.findViewById(R.id.params)
+        val unrPosts: TextView = view.findViewById(R.id.unreadedPosts)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PubViewHolder {
@@ -33,6 +34,7 @@ class GroupsAdapter(initialData: List<PubView>, var context: Context) :  Recycle
         val pub = pubs[position]
         holder.picture.load(pub.pic)
         holder.name.text = pub.name
+        holder.unrPosts.text = "${pub.unreadPosts}"
 
         holder.place.setOnClickListener {
             val intent = Intent(context, WallActivity::class.java)
