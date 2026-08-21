@@ -21,6 +21,8 @@ import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
+import kotlin.collections.chunked
+import kotlin.collections.forEach
 
 val client = OkHttpClient()
 
@@ -60,20 +62,20 @@ suspend fun getManyPosts(domain: String, token: String): String = withContext(Di
 suspend fun countUnreadPosts(pub: Pub, token: String): Int {
     var count = 0
     val json = getManyPosts(pub.ref, token)
-    Log.d("getmanyposts", json)
     val root = JSONObject(json)
     if (root.optString("error").isEmpty()) {
         val items = root.getJSONObject("response").getJSONArray("items")
 
         for (i in 0 until items.length()) {
             val item = items.getJSONObject(i)
-            val date = item.getLong("date")
-            Log.d("getmanyposts", "$date . ${pub.last_post_date}")
-            if (date > pub.last_post_date) {
-                count += 1
-            }
-            else {
-                break
+            if (item.optInt("is_pinned") == 0) {
+                val date = item.getLong("date")
+                if (date > pub.last_post_date) {
+                    count += 1
+                }
+                else {
+                    break
+                }
             }
         }
     }
@@ -164,5 +166,35 @@ class MainActivity : AppCompatActivity() {
 
         adapter = GroupsAdapter(all_pub, this)
         recyclerView.adapter = adapter
+    }
+
+    override fun onResume() {
+        super.onResume()
+        val db = DBHelper(this, null)
+        val token: String = (application as App).token
+
+        val all_pub_inf = db.get_all_pub()
+        val all_pub = mutableListOf<PubView>()
+
+        lifecycleScope.launch {
+            all_pub_inf.chunked(2).forEach { batch ->
+                coroutineScope {
+                    batch.forEach { i ->
+                        launch {
+                            try {
+                                val json = getGroupInfo(i.ref, token)
+                                val fullpub = parseGroupInfo(json, i, token)
+
+                                all_pub.add(fullpub)
+                                adapter.updateData(all_pub.toList())
+                            } catch (e: Exception) {
+                                Log.e("PUB_INF", "Ошибка для ${i.ref}", e)
+                            }
+                        }
+                    }
+                }
+                delay(1000)
+            }
+        }
     }
 }

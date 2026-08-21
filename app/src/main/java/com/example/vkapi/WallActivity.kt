@@ -90,7 +90,17 @@ suspend fun getLPD(json: String): Long {
     var date: Long = 0
     if (root.optString("error").isEmpty()) {
         val item = root.getJSONObject("response").getJSONArray("items").getJSONObject(0)
-        date = item.getLong("date")
+        Log.d("posts", item.toString())
+        if (item.optInt("is_pinned") == 0) {
+            date = item.getLong("date")
+            Log.d("posts_0", date.toString())
+        }
+        else {
+            val secitem = root.getJSONObject("response").getJSONArray("items").getJSONObject(1)
+            Log.d("posts_1", secitem.toString())
+            date = secitem.getLong("date")
+            Log.d("posts_1", date.toString())
+        }
     }
     return date
 }
@@ -201,7 +211,7 @@ class WallActivity : AppCompatActivity() {
                 lifecycleScope.launch {
                     coroutineScope {
                         launch {
-                            val json = getWall(ref, offset, token)
+                            val json = getWall(ref, 0, token)
                             db.updateLastPostTime(ref, getLPD(json))
                         }
                     }
