@@ -28,9 +28,23 @@ class PostAdapter(
 
     override fun onBindViewHolder(holder: PostViewHolder, position: Int) {
         val post = posts[position]
-        holder.binding.tvText.text = post.text
-        holder.binding.date.text = post.date
-        holder.binding.comment.text = "Комментарии: " + post.comment.toString()
+        if (post.text != "") {
+            holder.binding.tvText.visibility = View.VISIBLE
+            holder.binding.tvText.text = post.text
+        }
+        else {
+            holder.binding.tvText.visibility = View.GONE
+        }
+        holder.binding.date.text = "${post.date }   ${post.dateCmp}"
+        holder.binding.comment.text = "Комментарии: ${post.comment}"
+
+        if (post.mediaList.size < 2) {
+            holder.binding.mediaCount.visibility = View.GONE
+        }
+        else {
+            holder.binding.mediaCount.visibility = View.VISIBLE
+            holder.binding.mediaCount.text = "${post.mediaList.size} файлов"
+        }
 
         if (post.mediaList.isEmpty()) {
             holder.binding.rvMedia.visibility = View.GONE

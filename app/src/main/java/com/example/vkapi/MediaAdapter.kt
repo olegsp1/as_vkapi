@@ -30,7 +30,7 @@ class MediaAdapter(
             if (item.type == MediaType.VIDEO) View.VISIBLE else View.GONE
 
         holder.itemView.setOnClickListener {
-            if (items[position].path != "") {
+            if (items[position].path != "" || item.type == MediaType.PHOTO) {
                 onMediaClick(items, position) // передаём весь список медиа этого поста + позицию
             }
             else {

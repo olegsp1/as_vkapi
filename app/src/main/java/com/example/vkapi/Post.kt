@@ -17,5 +17,6 @@ data class Post(
     val mediaList: List<MediaItem>,
     val text: String,
     val date: String,
+    val dateCmp: String,
     val comment: Long
 )

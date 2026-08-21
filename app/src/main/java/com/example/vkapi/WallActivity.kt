@@ -29,6 +29,8 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.text.SimpleDateFormat
+import java.time.ZoneId
+import java.time.ZoneOffset
 import java.util.Date
 import java.util.Locale
 
@@ -124,15 +126,27 @@ suspend fun parseWall(json: String): List<Post> {
             }
 
             val sdf = SimpleDateFormat("HH:mm:ss  d MMMM yyyy", Locale("ru"))
-            val date = sdf.format(Date(item.getLong("date") * 1000))
+            val rawDate = item.getLong("date")
+            val date = sdf.format(Date(rawDate * 1000))
+            val secUtc: Long = System.currentTimeMillis() / 1000
+            val cmp = secUtc - rawDate
+            var dateCmp = ""
+            when (cmp) {
+                in 1..3600 -> dateCmp = "${cmp / 60} минут назад"
+                in 3600..7200 -> dateCmp = "1 час назад"
+                in 7200..86400 -> dateCmp = "${cmp / 3600} часа назад"
+                in 86400..172800 -> dateCmp = "1 день назад"
+                in 172800..2592000 -> dateCmp = "${cmp / 3600 / 24} дня назад"
+                else -> dateCmp = "давно"
+            }
             val comment = item.getJSONObject("comments").getLong("count")
 
-            posts.add(Post(id, media, text, date, comment))
+            posts.add(Post(id, media, text, date, dateCmp, comment))
         }
     }
     else {
         val errormsg: String = root.getJSONObject("error").getString("error_msg")
-        posts.add(Post(1, emptyList(), errormsg, "loading...", 0))
+        posts.add(Post(1, emptyList(), errormsg, "loading...", "", 0))
     }
 
     return posts
@@ -169,7 +183,7 @@ class WallActivity : AppCompatActivity() {
         wall.layoutManager = LinearLayoutManager(this)
 
 
-        val loading = listOf(Post(1, emptyList(), "loading...", "loading...", 0))
+        val loading = listOf(Post(1, emptyList(), "loading...", "loading...", "", 0))
         adapter = PostAdapter(
             initialData = loading,
             onDownloadClick = { mediaList, clickedIndex -> startDownload(mediaList[clickedIndex]) },
@@ -207,7 +221,7 @@ class WallActivity : AppCompatActivity() {
         next.setOnClickListener {
             offset += 10
             update()
-            if (offset < 20) {
+            if (offset == 10) {
                 lifecycleScope.launch {
                     coroutineScope {
                         launch {
