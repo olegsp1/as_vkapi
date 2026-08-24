@@ -91,12 +91,13 @@ class DBHelper(val context: Context, val factory: SQLiteDatabase.CursorFactory?)
 
     fun updateLastPostTime(ref: String, lpd: Long) {
         val db = this.writableDatabase
+
         val values = ContentValues().apply {
             put("last_post", lpd)
         }
 
-        val whereClause = "ref = ?"
-        val whereArgs = arrayOf(ref)
+        val whereClause = "ref = ? AND last_post < ?"
+        val whereArgs = arrayOf(ref, lpd.toString())
 
         db.update("pubs", values, whereClause, whereArgs)
     }

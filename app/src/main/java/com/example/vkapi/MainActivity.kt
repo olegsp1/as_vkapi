@@ -176,30 +176,33 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        val db = DBHelper(this, null)
-        val token: String = (application as App).token
+        if ((application as App).MANU) {
+            (application as App).MANU = false
+            val db = DBHelper(this, null)
+            val token: String = (application as App).token
 
-        val all_pub_inf = db.get_all_pub()
-        val all_pub = mutableListOf<PubView>()
+            val all_pub_inf = db.get_all_pub()
+            val all_pub = mutableListOf<PubView>()
 
-        lifecycleScope.launch {
-            all_pub_inf.chunked(2).forEach { batch ->
-                coroutineScope {
-                    batch.forEach { i ->
-                        launch {
-                            try {
-                                val json = getGroupInfo(i.ref, token)
-                                val fullpub = parseGroupInfo(json, i, token)
+            lifecycleScope.launch {
+                all_pub_inf.chunked(2).forEach { batch ->
+                    coroutineScope {
+                        batch.forEach { i ->
+                            launch {
+                                try {
+                                    val json = getGroupInfo(i.ref, token)
+                                    val fullpub = parseGroupInfo(json, i, token)
 
-                                all_pub.add(fullpub)
-                                adapter.updateData(all_pub.toList())
-                            } catch (e: Exception) {
-                                Log.e("PUB_INF", "Ошибка для ${i.ref}", e)
+                                    all_pub.add(fullpub)
+                                    adapter.updateData(all_pub.toList())
+                                } catch (e: Exception) {
+                                    Log.e("PUB_INF", "Ошибка для ${i.ref}", e)
+                                }
                             }
                         }
                     }
+                    delay(1000)
                 }
-                delay(1000)
             }
         }
     }

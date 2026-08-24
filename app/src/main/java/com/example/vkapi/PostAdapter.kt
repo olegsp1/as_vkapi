@@ -38,6 +38,14 @@ class PostAdapter(
         holder.binding.date.text = "${post.date }   ${post.dateCmp}"
         holder.binding.comment.text = "Комментарии: ${post.comment}"
 
+        if (post.isPinned) {
+            holder.binding.isPinned.visibility = View.VISIBLE
+            holder.binding.isPinned.text = "закрепленно"
+        }
+        else {
+            holder.binding.isPinned.visibility = View.GONE
+        }
+
         if (post.mediaList.size < 2) {
             holder.binding.mediaCount.visibility = View.GONE
         }

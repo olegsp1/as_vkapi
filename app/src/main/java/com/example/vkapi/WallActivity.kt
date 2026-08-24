@@ -134,6 +134,7 @@ suspend fun parseWall(json: String): List<Post> {
             val item = items.getJSONObject(i)
             val id = item.getLong("id")
             val text = item.optString("text", "")
+            val isPinned = item.optInt("is_pinned") == 1
 
             val media = mutableListOf<MediaItem>()
             item.optJSONArray("attachments")?.let { attachments ->
@@ -158,12 +159,12 @@ suspend fun parseWall(json: String): List<Post> {
             }
             val comment = item.getJSONObject("comments").getLong("count")
 
-            posts.add(Post(id, media, text, date, dateCmp, comment))
+            posts.add(Post(id, media, text, date, dateCmp, comment, isPinned))
         }
     }
     else {
         val errormsg: String = root.getJSONObject("error").getString("error_msg")
-        posts.add(Post(1, emptyList(), errormsg, "loading...", "", 0))
+        posts.add(Post(1, emptyList(), errormsg, "loading...", "", 0, false))
     }
 
     return posts
@@ -176,6 +177,7 @@ suspend fun parseArray(items: JSONArray): List<Post> {
         val item = items.getJSONObject(i)
         val id = item.getLong("id")
         val text = item.optString("text", "")
+        val isPinned = item.optInt("is_pinned") == 1
 
         val media = mutableListOf<MediaItem>()
         item.optJSONArray("attachments")?.let { attachments ->
@@ -200,7 +202,7 @@ suspend fun parseArray(items: JSONArray): List<Post> {
         }
         val comment = item.getJSONObject("comments").getLong("count")
 
-        posts.add(Post(id, media, text, date, dateCmp, comment))
+        posts.add(Post(id, media, text, date, dateCmp, comment, isPinned))
     }
     return posts
 }
@@ -241,7 +243,7 @@ class WallActivity : AppCompatActivity() {
         wall.layoutManager = LinearLayoutManager(this)
 
 
-        val loading = listOf(Post(1, emptyList(), "loading...", "loading...", "", 0))
+        val loading = listOf(Post(1, emptyList(), "loading...", "loading...", "", 0, false))
         adapter = PostAdapter(
             initialData = loading,
             onDownloadClick = { mediaList, clickedIndex -> startDownload(mediaList[clickedIndex]) },
@@ -298,6 +300,7 @@ class WallActivity : AppCompatActivity() {
         }
 
         fun updateLPD(json: String, offset: Int, ref: String, token: String) {
+            (application as App).MANU = true
             if (offset >= 100) {
                 lifecycleScope.launch {
                     coroutineScope {

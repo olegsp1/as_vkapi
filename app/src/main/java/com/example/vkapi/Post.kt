@@ -18,5 +18,6 @@ data class Post(
     val text: String,
     val date: String,
     val dateCmp: String,
-    val comment: Long
+    val comment: Long,
+    val isPinned: Boolean
 )
