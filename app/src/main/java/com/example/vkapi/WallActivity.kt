@@ -87,7 +87,7 @@ private fun bestPhotoUrl(sizes: JSONArray?): String? {
     return bestUrl
 }
 
-suspend fun getLPD(json: String): Long {
+fun getLPD(json: String): Long {
     val root = JSONObject(json)
     var date: Long = 0
     if (root.optString("error").isEmpty()) {
@@ -103,6 +103,23 @@ suspend fun getLPD(json: String): Long {
             date = secitem.getLong("date")
             Log.d("posts_1", date.toString())
         }
+    }
+    return date
+}
+
+fun getLPDFromList(json: JSONArray): Long {
+    var date: Long = 0
+    val item = json.getJSONObject(0)
+    Log.d("posts", item.toString())
+    if (item.optInt("is_pinned") == 0) {
+        date = item.getLong("date")
+        Log.d("posts_0", date.toString())
+    }
+    else {
+        val secitem = json.getJSONObject(1)
+        Log.d("posts_1", secitem.toString())
+        date = secitem.getLong("date")
+        Log.d("posts_1", date.toString())
     }
     return date
 }
@@ -152,6 +169,42 @@ suspend fun parseWall(json: String): List<Post> {
     return posts
 }
 
+suspend fun parseArray(items: JSONArray): List<Post> {
+    val posts = mutableListOf<Post>()
+
+    for (i in 0 until items.length()) {
+        val item = items.getJSONObject(i)
+        val id = item.getLong("id")
+        val text = item.optString("text", "")
+
+        val media = mutableListOf<MediaItem>()
+        item.optJSONArray("attachments")?.let { attachments ->
+            for (j in 0 until attachments.length()) {
+                parseAttachment(attachments.getJSONObject(j))?.let { media.add(it) }
+            }
+        }
+
+        val sdf = SimpleDateFormat("HH:mm:ss  d MMMM yyyy", Locale("ru"))
+        val rawDate = item.getLong("date")
+        val date = sdf.format(Date(rawDate * 1000))
+        val secUtc: Long = System.currentTimeMillis() / 1000
+        val cmp = secUtc - rawDate
+        var dateCmp = ""
+        when (cmp) {
+            in 1..3600 -> dateCmp = "${cmp / 60} минут назад"
+            in 3600..7200 -> dateCmp = "1 час назад"
+            in 7200..86400 -> dateCmp = "${cmp / 3600} часа назад"
+            in 86400..172800 -> dateCmp = "1 день назад"
+            in 172800..2592000 -> dateCmp = "${cmp / 3600 / 24} дня назад"
+            else -> dateCmp = "давно"
+        }
+        val comment = item.getJSONObject("comments").getLong("count")
+
+        posts.add(Post(id, media, text, date, dateCmp, comment))
+    }
+    return posts
+}
+
 class WallActivity : AppCompatActivity() {
     private lateinit var adapter: PostAdapter
 
@@ -175,11 +228,16 @@ class WallActivity : AppCompatActivity() {
         val back: TextView = findViewById(R.id.back)
         val pgnum: TextView = findViewById(R.id.pagenumber)
 
-        var offset = 0
-
         name.text = intent.getStringExtra("name")
         pic.load(intent.getStringExtra("pic"))
         val ref = intent.getStringExtra("ref").toString()
+        val unrp = intent.getStringExtra("unrp")?.toInt()
+
+        val json = JsonHolder.jsonItem ?: ""
+        JsonHolder.jsonItem = null
+        var offset = unrp ?: 0
+        offset = offset / 10 * 10
+
         wall.layoutManager = LinearLayoutManager(this)
 
 
@@ -196,49 +254,96 @@ class WallActivity : AppCompatActivity() {
             }
         )
 
-        fun update(){
-            lifecycleScope.launch {
-                delay(1000)
+        fun update(offset: Int){
+            if (offset >= 100) {
+                lifecycleScope.launch {
+                    delay(1000)
+                    coroutineScope {
+                        launch {
+                            pgnum.text = offset.toString()
+                            val json = getWall(ref, offset, token)
+                            val postList = parseWall(json).reversed()
 
-                coroutineScope {
-                    launch {
-                        pgnum.text = offset.toString()
-                        val json = getWall(ref, offset, token)
-                        val postList = parseWall(json)
+                            initYoutubeDL(postList)
 
-                        initYoutubeDL(postList)
+                            adapter.updateData(postList)
+                            wall.scrollToPosition(0)
+                        }
+                    }
+                }
+            }
+            else {
+                lifecycleScope.launch {
+                    coroutineScope {
+                        launch {
+                            pgnum.text = offset.toString()
+                            val alllist = JSONObject(json).getJSONObject("response").getJSONArray("items")
+                            val jsonList = JSONArray()
+                            for (i in offset until (offset + 10)) {
+                                if (i < alllist.length()) { // Защита от IndexOutOfBoundsException
+                                    jsonList.put(alllist.get(i))
+                                }
+                            }
 
-                        adapter.updateData(postList)
-                        wall.scrollToPosition(0)
+                            val postList = parseArray(jsonList).reversed()
+
+                            initYoutubeDL(postList)
+
+                            adapter.updateData(postList)
+                            wall.scrollToPosition(0)
+                        }
                     }
                 }
             }
         }
 
-        update()
-        wall.adapter = adapter
-
-        next.setOnClickListener {
-            offset += 10
-            update()
-            if (offset == 10) {
+        fun updateLPD(json: String, offset: Int, ref: String, token: String) {
+            if (offset >= 100) {
                 lifecycleScope.launch {
                     coroutineScope {
                         launch {
-                            val json = getWall(ref, 0, token)
-                            db.updateLastPostTime(ref, getLPD(json))
+                            val list = getWall(ref, offset + 10, token)
+                            db.updateLastPostTime(ref, getLPD(list))
                         }
                     }
                 }
-                Log.d("posts", "посты $ref прочитанны")
+            }
+            else {
+                lifecycleScope.launch {
+                    coroutineScope {
+                        launch {
+                            val alllist = JSONObject(json).getJSONObject("response").getJSONArray("items")
+                            val jsonList = JSONArray()
+                            for (i in offset until (offset + 10)) {
+                                if (i < alllist.length()) { // Защита от IndexOutOfBoundsException
+                                    jsonList.put(alllist.get(i))
+                                }
+                            }
+                            db.updateLastPostTime(ref, getLPDFromList(jsonList))
+                        }
+                    }
+                }
+            }
+        }
+
+        update(offset)
+        wall.adapter = adapter
+
+        next.setOnClickListener {
+            if (offset > 9) {
+                offset -= 10
+                update(offset)
+                updateLPD(json, offset, ref, token)
+            }
+            else {
+                updateLPD(json, offset, ref, token)
+                Toast.makeText(this@WallActivity, "Посты закончились", Toast.LENGTH_LONG).show()
             }
         }
 
         back.setOnClickListener {
-            if (offset > 9) {
-                offset -= 10
-                update()
-            }
+            offset += 10
+            update(offset)
         }
     }
 

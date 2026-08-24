@@ -37,10 +37,13 @@ class GroupsAdapter(initialData: List<PubView>, var context: Context) :  Recycle
         holder.unrPosts.text = "${pub.unreadPosts}"
 
         holder.place.setOnClickListener {
+            JsonHolder.jsonItem = pub.posts
+
             val intent = Intent(context, WallActivity::class.java)
             intent.putExtra("name", pub.name)
             intent.putExtra("pic", pub.pic)
             intent.putExtra("ref", pub.ref)
+            intent.putExtra("unrp", pub.unreadPosts)
             context.startActivity(intent)
         }
 

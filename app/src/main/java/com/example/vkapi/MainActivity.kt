@@ -59,7 +59,7 @@ suspend fun getManyPosts(domain: String, token: String): String = withContext(Di
     }
 }
 
-suspend fun countUnreadPosts(pub: Pub, token: String): Int {
+suspend fun countUnreadPosts(pub: Pub, token: String): List<String> {
     var count = 0
     val json = getManyPosts(pub.ref, token)
     val root = JSONObject(json)
@@ -82,20 +82,26 @@ suspend fun countUnreadPosts(pub: Pub, token: String): Int {
     else {
         Log.d("getmanyposts", root.optString("error"))
     }
-    return count
+    return listOf(count.toString(), json)
 }
 
 suspend fun parseGroupInfo(json: String, pub: Pub, token: String): PubView {
     val jsonObject = JSONObject(json)
     val groups = jsonObject.getJSONObject("response").getJSONArray("groups")
     val group = groups.getJSONObject(0)
+    val countAndJson = countUnreadPosts(pub, token)
 
     return PubView(
         ref = pub.ref,
-        unreadPosts = countUnreadPosts(pub, token),
+        unreadPosts = countAndJson[0],
         name = group.getString("name"),
-        pic = group.getString("photo_200")
+        pic = group.getString("photo_200"),
+        posts = countAndJson[1]
     )
+}
+
+object JsonHolder {
+    var jsonItem: String? = null
 }
 
 class MainActivity : AppCompatActivity() {
