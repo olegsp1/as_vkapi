@@ -6,8 +6,6 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.vkapi.databinding.ItemPostBinding
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 class PostAdapter(
     initialData: List<Post>,

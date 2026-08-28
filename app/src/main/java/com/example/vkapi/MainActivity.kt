@@ -4,8 +4,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.widget.Button
-import android.widget.PopupMenu
-import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -15,7 +13,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -166,7 +163,6 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                 }
-                delay(1000)
             }
         }
 
@@ -201,7 +197,6 @@ class MainActivity : AppCompatActivity() {
                             }
                         }
                     }
-                    delay(1000)
                 }
             }
         }

@@ -39,6 +39,7 @@ class MediaAdapter(
         }
 
         // Загрузка изображения/превью видео через Glide
+        Log.d("glide", item.toString())
         Glide.with(holder.itemView)
             .load(if (item.type == MediaType.VIDEO) item.thumbnail else item.uri) // для видео — thumbnail
             .fitCenter()

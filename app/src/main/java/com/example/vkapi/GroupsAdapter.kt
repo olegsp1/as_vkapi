@@ -12,7 +12,6 @@ import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
-import com.example.vkapi.PubView
 
 class GroupsAdapter(initialData: List<PubView>, var context: Context) :  RecyclerView.Adapter<GroupsAdapter.PubViewHolder>() {
     private val pubs = initialData.toMutableList()

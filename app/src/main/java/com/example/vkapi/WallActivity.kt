@@ -16,12 +16,10 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
 import com.yausername.youtubedl_android.YoutubeDL
-import com.yausername.youtubedl_android.YoutubeDL.getInstance
 import com.yausername.youtubedl_android.YoutubeDLException
 import com.yausername.youtubedl_android.YoutubeDLRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.Request
@@ -29,8 +27,6 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.text.SimpleDateFormat
-import java.time.ZoneId
-import java.time.ZoneOffset
 import java.util.Date
 import java.util.Locale
 
@@ -259,17 +255,21 @@ class WallActivity : AppCompatActivity() {
         fun update(offset: Int){
             if (offset >= 100) {
                 lifecycleScope.launch {
-                    delay(1000)
                     coroutineScope {
                         launch {
                             pgnum.text = offset.toString()
                             val json = getWall(ref, offset, token)
-                            val postList = parseWall(json).reversed()
-
-                            initYoutubeDL(postList)
+                            var postList = listOf(Post(1, emptyList(), "error", "error", "", 0, false))
+                            try {
+                                postList = parseWall(json).reversed()
+                            }
+                            catch (e: Exception) {
+                                Log.e("parseError", e.toString())
+                            }
 
                             adapter.updateData(postList)
                             wall.scrollToPosition(0)
+                            fetchThumbnails(postList)
                         }
                     }
                 }
@@ -289,10 +289,9 @@ class WallActivity : AppCompatActivity() {
 
                             val postList = parseArray(jsonList).reversed()
 
-                            initYoutubeDL(postList)
-
                             adapter.updateData(postList)
                             wall.scrollToPosition(0)
+                            fetchThumbnails(postList)
                         }
                     }
                 }
@@ -350,39 +349,28 @@ class WallActivity : AppCompatActivity() {
         }
     }
 
-    /** yt-dlp инициализируется один раз, в фоне — операция может занять время при первом запуске */
-    private fun initYoutubeDL(postList: List<Post>) {
-        lifecycleScope.launch {
-            val success = withContext(Dispatchers.IO) {
-                try {
-                    YoutubeDL.getInstance().init(this@WallActivity)
-                    true
-                } catch (e: YoutubeDLException) {
-                    Log.e("dlp", "Ошибка инициализации youtubedl-android", e)
-                    false
+    private suspend fun fetchThumbnails(postList: List<Post>) = coroutineScope {
+        postList.forEachIndexed { postIndex, post ->
+            post.mediaList.forEach { media ->
+                if (media.type == MediaType.VIDEO) {
+                    launch {
+                        val info = withContext(Dispatchers.IO) {
+                            try {
+                                YoutubeDL.getInstance().getInfo(media.uri)
+                            } catch (e: YoutubeDLException) {
+                                Log.e("ytdlp", "Не удалось получить инфо для ${media.uri}", e)
+                                null
+                            }
+                        }
+                        if (info != null) {
+                            media.thumbnail = info.thumbnail
+                            // сообщаем адаптеру, что именно этот элемент изменился
+                            withContext(Dispatchers.Main) {
+                                adapter.notifyItemChanged(postIndex)
+                            }
+                        }
+                    }
                 }
-            }
-            if (!success) {
-                Toast.makeText(this@WallActivity, "Не удалось инициализировать yt-dlp", Toast.LENGTH_LONG).show()
-                return@launch
-            }
-
-            postList.forEach { it.mediaList.forEach { if (it.type == MediaType.VIDEO) fetchInfo(it) } }
-        }
-    }
-
-    private fun fetchInfo(item: MediaItem) {
-        lifecycleScope.launch {
-            val info = withContext(Dispatchers.IO) {
-                try {
-                    YoutubeDL.getInstance().getInfo(item.uri)
-                } catch (e: YoutubeDLException) {
-                    Log.e("dlp", "Не удалось получить инфо для ${item.uri}", e)
-                    null
-                }
-            }
-            if (info != null) {
-                item.thumbnail = info.thumbnail
             }
         }
     }
