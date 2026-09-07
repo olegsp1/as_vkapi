@@ -1,5 +1,8 @@
 package com.example.vkapi
 
+import android.content.Context
+import android.content.Intent
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,7 +13,8 @@ import com.example.vkapi.databinding.ItemPostBinding
 class PostAdapter(
     initialData: List<Post>,
     private val onDownloadClick: (List<MediaItem>, Int) -> Unit,
-    private val onMediaClick: (List<MediaItem>, Int) -> Unit
+    private val onMediaClick: (List<MediaItem>, Int) -> Unit,
+    val context: Context
 ) : RecyclerView.Adapter<PostAdapter.PostViewHolder>() {
     private val posts = initialData.toMutableList()
 
@@ -35,6 +39,13 @@ class PostAdapter(
         }
         holder.binding.date.text = "${post.date }   ${post.dateCmp}"
         holder.binding.comment.text = "Комментарии: ${post.comment}"
+
+        holder.binding.comment.setOnClickListener {
+            val intent = Intent(context, CommentsActivity::class.java)
+            intent.putExtra("postId", post.id.toString())
+            intent.putExtra("ownerId", post.ownerId)
+            context.startActivity(intent)
+        }
 
         if (post.isPinned) {
             holder.binding.isPinned.visibility = View.VISIBLE

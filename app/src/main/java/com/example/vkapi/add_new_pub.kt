@@ -15,6 +15,7 @@ import okhttp3.Request
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.json.JSONObject
 
 suspend fun getWallPosts(
     domain: String,
@@ -60,12 +61,17 @@ class add_new_pub : AppCompatActivity() {
         }
 
         button.setOnClickListener {
-            val ref = ref_inp.text.toString().trim()
+            var ref = ref_inp.text.toString().trim()
 
             if (ref == "") {
                 Toast.makeText(this, "введите адрес", Toast.LENGTH_LONG).show()
             }
             else {
+                val prefix = "https://vk.ru/"
+                if (ref.startsWith(prefix)) {
+                    ref = ref.substring(prefix.length)
+                }
+
                 lifecycleScope.launch {
                     val json = getWallPosts(
                         domain = ref,
@@ -73,9 +79,8 @@ class add_new_pub : AppCompatActivity() {
                         offset = 0,
                         accessToken = token
                     )
-                    Log.d("VK_API", json)
 
-                    if (json != "") {
+                    if (JSONObject(json).optString("error").isEmpty()) {
                         val pub = Pub(ref, 0)
 
                         val db = DBHelper(this@add_new_pub, null)

@@ -130,6 +130,7 @@ suspend fun parseWall(json: String): List<Post> {
             val item = items.getJSONObject(i)
             val id = item.getLong("id")
             val text = item.optString("text", "")
+            val ownerId = item.optInt("owner_id", -1).toString()
             val isPinned = item.optInt("is_pinned") == 1
 
             val media = mutableListOf<MediaItem>()
@@ -155,12 +156,12 @@ suspend fun parseWall(json: String): List<Post> {
             }
             val comment = item.getJSONObject("comments").getLong("count")
 
-            posts.add(Post(id, media, text, date, dateCmp, comment, isPinned))
+            posts.add(Post(id, media, text, date, dateCmp, comment, isPinned, ownerId))
         }
     }
     else {
         val errormsg: String = root.getJSONObject("error").getString("error_msg")
-        posts.add(Post(1, emptyList(), errormsg, "loading...", "", 0, false))
+        posts.add(Post(1, emptyList(), errormsg, "error", "", 0, false, ""))
     }
 
     return posts
@@ -173,6 +174,7 @@ suspend fun parseArray(items: JSONArray): List<Post> {
         val item = items.getJSONObject(i)
         val id = item.getLong("id")
         val text = item.optString("text", "")
+        val ownerId = item.optInt("owner_id", -1).toString()
         val isPinned = item.optInt("is_pinned") == 1
 
         val media = mutableListOf<MediaItem>()
@@ -198,7 +200,7 @@ suspend fun parseArray(items: JSONArray): List<Post> {
         }
         val comment = item.getJSONObject("comments").getLong("count")
 
-        posts.add(Post(id, media, text, date, dateCmp, comment, isPinned))
+        posts.add(Post(id, media, text, date, dateCmp, comment, isPinned, ownerId))
     }
     return posts
 }
@@ -239,7 +241,7 @@ class WallActivity : AppCompatActivity() {
         wall.layoutManager = LinearLayoutManager(this)
 
 
-        val loading = listOf(Post(1, emptyList(), "loading...", "loading...", "", 0, false))
+        val loading = listOf(Post(1, emptyList(), "loading...", "loading...", "", 0, false, ""))
         adapter = PostAdapter(
             initialData = loading,
             onDownloadClick = { mediaList, clickedIndex -> startDownload(mediaList[clickedIndex]) },
@@ -249,7 +251,8 @@ class WallActivity : AppCompatActivity() {
                     putExtra("startPosition", clickedIndex)
                 }
                 startActivity(intent)
-            }
+            },
+            context = this
         )
 
         fun update(offset: Int){
@@ -259,7 +262,7 @@ class WallActivity : AppCompatActivity() {
                         launch {
                             pgnum.text = offset.toString()
                             val json = getWall(ref, offset, token)
-                            var postList = listOf(Post(1, emptyList(), "error", "error", "", 0, false))
+                            var postList = listOf(Post(1, emptyList(), "error", "error", "", 0, false, ""))
                             try {
                                 postList = parseWall(json).reversed()
                             }
