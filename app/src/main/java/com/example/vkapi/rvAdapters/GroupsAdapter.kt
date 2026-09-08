@@ -1,4 +1,4 @@
-package com.example.vkapi
+package com.example.vkapi.rvAdapters
 
 import android.content.Context
 import android.content.Intent
@@ -12,6 +12,11 @@ import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
+import com.example.vkapi.DBHelper
+import com.example.vkapi.ui.JsonHolder
+import com.example.vkapi.R
+import com.example.vkapi.ui.WallActivity
+import com.example.vkapi.models.PubView
 
 class GroupsAdapter(initialData: List<PubView>, var context: Context) :  RecyclerView.Adapter<GroupsAdapter.PubViewHolder>() {
     private val pubs = initialData.toMutableList()
@@ -25,7 +30,7 @@ class GroupsAdapter(initialData: List<PubView>, var context: Context) :  Recycle
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PubViewHolder {
         val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.pub_layout, parent, false)
+            .inflate(R.layout.item_pub, parent, false)
         return PubViewHolder(view)
     }
 

@@ -1,4 +1,4 @@
-package com.example.vkapi
+package com.example.vkapi.ui
 
 import android.content.Intent
 import android.os.Bundle
@@ -15,6 +15,15 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
+import com.example.vkapi.App
+import com.example.vkapi.DBHelper
+import com.example.vkapi.R
+import com.example.vkapi.models.MediaItem
+import com.example.vkapi.models.MediaType
+import com.example.vkapi.models.Post
+import com.example.vkapi.rvAdapters.PostAdapter
+import com.example.vkapi.utils.findDownloadedFile
+import com.example.vkapi.utils.parseAttachment
 import com.yausername.youtubedl_android.YoutubeDL
 import com.yausername.youtubedl_android.YoutubeDLException
 import com.yausername.youtubedl_android.YoutubeDLRequest
@@ -45,42 +54,6 @@ suspend fun getWall(domain: String, offset: Int, token: String): String = withCo
     client.newCall(request).execute().use { response ->
         response.body?.string() ?: ""
     }
-}
-private suspend fun parseAttachment(att: JSONObject): MediaItem? {
-    return when (att.optString("type")) {
-        "photo" -> {
-            val photo = att.optJSONObject("photo") ?: return null
-            val uri = bestPhotoUrl(photo.optJSONArray("sizes")) ?: return null
-            MediaItem(uri, MediaType.PHOTO)
-        }
-        "video" -> {
-            val video = att.optJSONObject("video") ?: return null
-            val ownerId = video.optLong("owner_id")
-            val videoId = video.optLong("id")
-            val vurl = "https://vk.ru/clip$ownerId" + "_$videoId"
-
-            MediaItem(vurl, MediaType.VIDEO)
-        }
-        else -> null
-    }
-}
-
-private fun bestPhotoUrl(sizes: JSONArray?): String? {
-    if (sizes == null) return null
-    var bestUrl: String? = null
-    var bestArea = -1
-    for (k in 0 until sizes.length()) {
-        val size = sizes.getJSONObject(k)
-        val w = size.optInt("width", 0)
-        val h = size.optInt("height", 0)
-        val url = size.optString("url", null) ?: continue
-        val area = w * h
-        if (area > bestArea) {
-            bestArea = area
-            bestUrl = url
-        }
-    }
-    return bestUrl
 }
 
 fun getLPD(json: String): Long {
@@ -121,47 +94,15 @@ fun getLPDFromList(json: JSONArray): Long {
 }
 
 suspend fun parseWall(json: String): List<Post> {
-    val posts = mutableListOf<Post>()
+    var posts = listOf(Post(1, emptyList(), "error", "error", "", 0, false, "", "", ""))
     val root = JSONObject(json)
     if (root.optString("error").isEmpty()) {
         val items = root.getJSONObject("response").getJSONArray("items")
-
-        for (i in 0 until items.length()) {
-            val item = items.getJSONObject(i)
-            val id = item.getLong("id")
-            val text = item.optString("text", "")
-            val ownerId = item.optInt("owner_id", -1).toString()
-            val isPinned = item.optInt("is_pinned") == 1
-
-            val media = mutableListOf<MediaItem>()
-            item.optJSONArray("attachments")?.let { attachments ->
-                for (j in 0 until attachments.length()) {
-                    parseAttachment(attachments.getJSONObject(j))?.let { media.add(it) }
-                }
-            }
-
-            val sdf = SimpleDateFormat("HH:mm:ss  d MMMM yyyy", Locale("ru"))
-            val rawDate = item.getLong("date")
-            val date = sdf.format(Date(rawDate * 1000))
-            val secUtc: Long = System.currentTimeMillis() / 1000
-            val cmp = secUtc - rawDate
-            var dateCmp = ""
-            when (cmp) {
-                in 1..3600 -> dateCmp = "${cmp / 60} минут назад"
-                in 3600..7200 -> dateCmp = "1 час назад"
-                in 7200..86400 -> dateCmp = "${cmp / 3600} часа назад"
-                in 86400..172800 -> dateCmp = "1 день назад"
-                in 172800..2592000 -> dateCmp = "${cmp / 3600 / 24} дня назад"
-                else -> dateCmp = "давно"
-            }
-            val comment = item.getJSONObject("comments").getLong("count")
-
-            posts.add(Post(id, media, text, date, dateCmp, comment, isPinned, ownerId))
-        }
+        posts = parseArray(items)
     }
     else {
         val errormsg: String = root.getJSONObject("error").getString("error_msg")
-        posts.add(Post(1, emptyList(), errormsg, "error", "", 0, false, ""))
+        Log.e("Parse_wall", errormsg)
     }
 
     return posts
@@ -200,7 +141,32 @@ suspend fun parseArray(items: JSONArray): List<Post> {
         }
         val comment = item.getJSONObject("comments").getLong("count")
 
-        posts.add(Post(id, media, text, date, dateCmp, comment, isPinned, ownerId))
+        var repostText = ""
+        var repOwnerId = ""
+        if (item.optJSONArray("copy_history") != null) {
+            repostText = item.getJSONArray("copy_history").getJSONObject(0).optString("text", "")
+            repOwnerId = item.getJSONArray("copy_history").getJSONObject(0).optString("owner_id", "")
+            item.getJSONArray("copy_history").getJSONObject(0).optJSONArray("attachments")?.let { attachments ->
+                for (j in 0 until attachments.length()) {
+                    parseAttachment(attachments.getJSONObject(j))?.let { media.add(it) }
+                }
+            }
+        }
+
+        posts.add(
+            Post(
+                id,
+                media,
+                text,
+                date,
+                dateCmp,
+                comment,
+                isPinned,
+                ownerId,
+                repostText,
+                repOwnerId
+            )
+        )
     }
     return posts
 }
@@ -241,7 +207,20 @@ class WallActivity : AppCompatActivity() {
         wall.layoutManager = LinearLayoutManager(this)
 
 
-        val loading = listOf(Post(1, emptyList(), "loading...", "loading...", "", 0, false, ""))
+        val loading = listOf(
+            Post(
+                1,
+                emptyList(),
+                "loading...",
+                "loading...",
+                "",
+                0,
+                false,
+                "",
+                "",
+                ""
+            )
+        )
         adapter = PostAdapter(
             initialData = loading,
             onDownloadClick = { mediaList, clickedIndex -> startDownload(mediaList[clickedIndex]) },
@@ -262,7 +241,20 @@ class WallActivity : AppCompatActivity() {
                         launch {
                             pgnum.text = offset.toString()
                             val json = getWall(ref, offset, token)
-                            var postList = listOf(Post(1, emptyList(), "error", "error", "", 0, false, ""))
+                            var postList = listOf(
+                                Post(
+                                    1,
+                                    emptyList(),
+                                    "error",
+                                    "error",
+                                    "",
+                                    0,
+                                    false,
+                                    "",
+                                    "",
+                                    ""
+                                )
+                            )
                             try {
                                 postList = parseWall(json).reversed()
                             }
@@ -378,14 +370,6 @@ class WallActivity : AppCompatActivity() {
         }
     }
 
-    private fun findDownloadedFile(dir: File, item: MediaItem): String? {
-        // Простой поиск самого свежего файла в папке — для прод-кода лучше сверять по shortTitle/ID из VideoInfo
-        return dir.listFiles()
-            ?.filter { it.isFile }
-            ?.maxByOrNull { it.lastModified() }
-            ?.absolutePath
-    }
-
     private fun startDownload(item: MediaItem) {
         val downloadDir = File(
             getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS),
@@ -406,7 +390,6 @@ class WallActivity : AppCompatActivity() {
 
                     YoutubeDL.getInstance().execute(request)
 
-                    // Ищем скачанный файл в целевой директории по названию видео
                     findDownloadedFile(downloadDir, item)
                 } catch (e: YoutubeDLException) {
                     Log.e("dlp", "Ошибка скачивания ${item.uri}", e)

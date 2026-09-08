@@ -1,14 +1,16 @@
-package com.example.vkapi
+package com.example.vkapi.rvAdapters
 
 import android.content.Context
 import android.content.Intent
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.vkapi.databinding.ItemPostBinding
+import com.example.vkapi.models.MediaItem
+import com.example.vkapi.models.Post
+import com.example.vkapi.ui.CommentsActivity
 
 class PostAdapter(
     initialData: List<Post>,
@@ -47,6 +49,22 @@ class PostAdapter(
             context.startActivity(intent)
         }
 
+        if (post.repostText != "") {
+            holder.binding.tvRepostText.visibility = View.VISIBLE
+            holder.binding.tvRepostText.text = post.repostText
+        }
+        else {
+            holder.binding.tvRepostText.visibility = View.GONE
+        }
+
+        if (post.repostOwnerId != "") {
+            holder.binding.tvRepostOwner.visibility = View.VISIBLE
+            holder.binding.tvRepostOwner.text = "Пересланно от ${post.repostOwnerId}"
+        }
+        else {
+            holder.binding.tvRepostOwner.visibility = View.GONE
+        }
+
         if (post.isPinned) {
             holder.binding.isPinned.visibility = View.VISIBLE
             holder.binding.isPinned.text = "закрепленно"
@@ -71,7 +89,8 @@ class PostAdapter(
                 layoutManager = LinearLayoutManager(
                     context, LinearLayoutManager.HORIZONTAL, false
                 )
-                holder.binding.rvMedia.adapter = MediaAdapter(post.mediaList, onDownloadClick, onMediaClick)
+                holder.binding.rvMedia.adapter =
+                    MediaAdapter(post.mediaList, onDownloadClick, onMediaClick)
                 setHasFixedSize(true)
             }
         }

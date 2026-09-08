@@ -1,8 +1,7 @@
-package com.example.vkapi
+package com.example.vkapi.ui
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
@@ -11,6 +10,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
+import com.example.vkapi.App
+import com.example.vkapi.DBHelper
+import com.example.vkapi.R
+import com.example.vkapi.models.Pub
 import okhttp3.Request
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

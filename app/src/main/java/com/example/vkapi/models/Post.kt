@@ -1,4 +1,4 @@
-package com.example.vkapi
+package com.example.vkapi.models
 
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
@@ -20,5 +20,7 @@ data class Post(
     val dateCmp: String,
     val comment: Long,
     val isPinned: Boolean,
-    val ownerId: String
+    val ownerId: String,
+    val repostText: String,
+    val repostOwnerId: String
 )

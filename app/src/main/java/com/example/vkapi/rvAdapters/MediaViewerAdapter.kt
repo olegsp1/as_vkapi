@@ -1,4 +1,4 @@
-package com.example.vkapi
+package com.example.vkapi.rvAdapters
 
 import android.view.LayoutInflater
 import android.view.View
@@ -9,6 +9,8 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.vkapi.databinding.ItemMediaFullscreenBinding
+import com.example.vkapi.models.MediaItem
+import com.example.vkapi.models.MediaType
 
 class MediaViewerAdapter(
     private val items: List<MediaItem>,

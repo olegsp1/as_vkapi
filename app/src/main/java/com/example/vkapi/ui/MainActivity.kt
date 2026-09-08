@@ -1,4 +1,4 @@
-package com.example.vkapi
+package com.example.vkapi.ui
 
 import android.content.Intent
 import android.os.Bundle
@@ -11,6 +11,12 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.vkapi.App
+import com.example.vkapi.DBHelper
+import com.example.vkapi.R
+import com.example.vkapi.models.Pub
+import com.example.vkapi.models.PubView
+import com.example.vkapi.rvAdapters.GroupsAdapter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch

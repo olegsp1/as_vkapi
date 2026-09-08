@@ -1,4 +1,4 @@
-package com.example.vkapi
+package com.example.vkapi.ui
 
 import android.content.Intent
 import android.os.Bundle
@@ -10,6 +10,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.example.vkapi.DBHelper
+import com.example.vkapi.R
+import com.example.vkapi.models.AppSetting
 import com.google.android.material.textfield.TextInputEditText
 import java.io.File
 
@@ -62,7 +65,7 @@ class AppSettings : AppCompatActivity() {
             val token = token_input.text.toString().trim()
 
             if (!token.isEmpty()) {
-                val setting = App_setting(skey = "token", svalue = token)
+                val setting = AppSetting(skey = "token", svalue = token)
                 val db = DBHelper(this@AppSettings, null)
 
                 db.add_setting(setting)

@@ -1,4 +1,4 @@
-package com.example.vkapi
+package com.example.vkapi.rvAdapters
 
 import android.util.Log
 import android.view.LayoutInflater
@@ -7,6 +7,8 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.vkapi.databinding.ItemMediaBinding
+import com.example.vkapi.models.MediaItem
+import com.example.vkapi.models.MediaType
 
 class MediaAdapter(
     private val items: List<MediaItem>,

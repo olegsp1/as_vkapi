@@ -1,9 +1,11 @@
-package com.example.vkapi
+package com.example.vkapi.ui
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
+import com.example.vkapi.rvAdapters.MediaViewerAdapter
 import com.example.vkapi.databinding.ActivityMediaViewerBinding
+import com.example.vkapi.models.MediaItem
 
 class MediaViewerActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMediaViewerBinding

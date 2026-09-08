@@ -4,6 +4,8 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import com.example.vkapi.models.AppSetting
+import com.example.vkapi.models.Pub
 
 class DBHelper(val context: Context, val factory: SQLiteDatabase.CursorFactory?) : SQLiteOpenHelper(context, "appdb", factory, 2) {
     override fun onCreate(db: SQLiteDatabase?) {
@@ -23,7 +25,7 @@ class DBHelper(val context: Context, val factory: SQLiteDatabase.CursorFactory?)
         onCreate(db)
     }
 
-    fun add_setting(setting: App_setting) {
+    fun add_setting(setting: AppSetting) {
         val values = ContentValues()
         values.put("skey", setting.skey)
         values.put("svalue", setting.svalue)

@@ -5,7 +5,7 @@
     android:id="@+id/Groupe"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".add_new_pub">
+    tools:context=".ui.add_new_pub">
 
     <EditText
         android:id="@+id/pub_ref"

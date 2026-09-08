@@ -1,4 +1,4 @@
-package com.example.vkapi
+package com.example.vkapi.ui
 
 import android.content.Intent
 import android.os.Bundle
@@ -12,6 +12,15 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.vkapi.App
+import com.example.vkapi.rvAdapters.CommentsAdapter
+import com.example.vkapi.R
+import com.example.vkapi.models.Comment
+import com.example.vkapi.models.MediaItem
+import com.example.vkapi.models.MediaType
+import com.example.vkapi.models.Post
+import com.example.vkapi.utils.findDownloadedFile
+import com.example.vkapi.utils.parseAttachment
 import com.yausername.youtubedl_android.YoutubeDL
 import com.yausername.youtubedl_android.YoutubeDLException
 import com.yausername.youtubedl_android.YoutubeDLRequest
@@ -20,7 +29,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.Request
-import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.text.SimpleDateFormat
@@ -42,43 +50,6 @@ suspend fun getComments(ownerId: String, postId: String, token: String): String 
     client.newCall(request).execute().use { response ->
         response.body?.string() ?: ""
     }
-}
-
-private suspend fun parseAttachment(att: JSONObject): MediaItem? {
-    return when (att.optString("type")) {
-        "photo" -> {
-            val photo = att.optJSONObject("photo") ?: return null
-            val uri = bestPhotoUrl(photo.optJSONArray("sizes")) ?: return null
-            MediaItem(uri, MediaType.PHOTO)
-        }
-        "video" -> {
-            val video = att.optJSONObject("video") ?: return null
-            val ownerId = video.optLong("owner_id")
-            val videoId = video.optLong("id")
-            val vurl = "https://vk.ru/clip$ownerId" + "_$videoId"
-
-            MediaItem(vurl, MediaType.VIDEO)
-        }
-        else -> null
-    }
-}
-
-private fun bestPhotoUrl(sizes: JSONArray?): String? {
-    if (sizes == null) return null
-    var bestUrl: String? = null
-    var bestArea = -1
-    for (k in 0 until sizes.length()) {
-        val size = sizes.getJSONObject(k)
-        val w = size.optInt("width", 0)
-        val h = size.optInt("height", 0)
-        val url = size.optString("url", null) ?: continue
-        val area = w * h
-        if (area > bestArea) {
-            bestArea = area
-            bestUrl = url
-        }
-    }
-    return bestUrl
 }
 
 suspend fun parseComments(json: String): List<Comment> {
@@ -147,9 +118,27 @@ suspend fun parseComments(json: String): List<Comment> {
                     }
 
                     val replyTo = item.optInt("reply_to_comment", -1)
-                    val answerTo = comments.find {it.vkId == replyTo} ?: Comment("", "", "error", "", 0, "", emptyList())
+                    val answerTo = comments.find {it.vkId == replyTo} ?: Comment(
+                        "",
+                        "",
+                        "error",
+                        "",
+                        0,
+                        "",
+                        emptyList()
+                    )
 
-                    comments.add(Comment("", userId, text, "$date   $dateCmp", id, answerTo.text, media))
+                    comments.add(
+                        Comment(
+                            "",
+                            userId,
+                            text,
+                            "$date   $dateCmp",
+                            id,
+                            answerTo.text,
+                            media
+                        )
+                    )
                 }
             }
         }
@@ -178,7 +167,17 @@ class CommentsActivity : AppCompatActivity() {
         val postId = intent.getStringExtra("postId") ?: "error"
         Log.d("comments_info", "$ownerId   $postId")
 
-        val loading = listOf(Comment("", "loading...", "loading...", "loading...", 0, "", emptyList()))
+        val loading = listOf(
+            Comment(
+                "",
+                "loading...",
+                "loading...",
+                "loading...",
+                0,
+                "",
+                emptyList()
+            )
+        )
         adapter = CommentsAdapter(
             initialData = loading,
             onDownloadClick = { mediaList, clickedIndex -> startDownload(mediaList[clickedIndex]) },
@@ -199,17 +198,36 @@ class CommentsActivity : AppCompatActivity() {
                     val json = getComments(ownerId, postId, token)
                     val comments = parseComments(json)
                     adapter.updateData(comments)
+                    fetchThumbnails(comments)
                 }
             }
         }
     }
 
-    private fun findDownloadedFile(dir: File, item: MediaItem): String? {
-        // Простой поиск самого свежего файла в папке — для прод-кода лучше сверять по shortTitle/ID из VideoInfo
-        return dir.listFiles()
-            ?.filter { it.isFile }
-            ?.maxByOrNull { it.lastModified() }
-            ?.absolutePath
+    private suspend fun fetchThumbnails(postList: List<Comment>) = coroutineScope {
+        postList.forEachIndexed { postIndex, comment ->
+            comment.mediaList.forEach { media ->
+                if (media.type == MediaType.VIDEO) {
+                    launch {
+                        val info = withContext(Dispatchers.IO) {
+                            try {
+                                YoutubeDL.getInstance().getInfo(media.uri)
+                            } catch (e: YoutubeDLException) {
+                                Log.e("ytdlp", "Не удалось получить инфо для ${media.uri}", e)
+                                null
+                            }
+                        }
+                        if (info != null) {
+                            media.thumbnail = info.thumbnail
+                            // сообщаем адаптеру, что именно этот элемент изменился
+                            withContext(Dispatchers.Main) {
+                                adapter.notifyItemChanged(postIndex)
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private fun startDownload(item: MediaItem) {
@@ -232,7 +250,6 @@ class CommentsActivity : AppCompatActivity() {
 
                     YoutubeDL.getInstance().execute(request)
 
-                    // Ищем скачанный файл в целевой директории по названию видео
                     findDownloadedFile(downloadDir, item)
                 } catch (e: YoutubeDLException) {
                     Log.e("dlp", "Ошибка скачивания ${item.uri}", e)

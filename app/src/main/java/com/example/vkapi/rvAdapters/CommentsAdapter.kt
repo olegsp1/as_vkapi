@@ -1,4 +1,4 @@
-package com.example.vkapi
+package com.example.vkapi.rvAdapters
 
 import android.content.Context
 import android.view.LayoutInflater
@@ -9,11 +9,15 @@ import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
+import com.example.vkapi.R
+import com.example.vkapi.models.Comment
+import com.example.vkapi.models.MediaItem
 
 class CommentsAdapter(initialData: List<Comment>,
                       private val onDownloadClick: (List<MediaItem>, Int) -> Unit,
                       private val onMediaClick: (List<MediaItem>, Int) -> Unit,
-                      var context: Context) :  RecyclerView.Adapter<CommentsAdapter.CommentsViewHolder>() {
+                      var context: Context
+) :  RecyclerView.Adapter<CommentsAdapter.CommentsViewHolder>() {
     private val comments = initialData.toMutableList()
     class CommentsViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val ans: TextView = view.findViewById(R.id.answerTo)
@@ -73,7 +77,8 @@ class CommentsAdapter(initialData: List<Comment>,
                 layoutManager = LinearLayoutManager(
                     context, LinearLayoutManager.HORIZONTAL, false
                 )
-                holder.media.adapter = MediaAdapter(comment.mediaList, onDownloadClick, onMediaClick)
+                holder.media.adapter =
+                    MediaAdapter(comment.mediaList, onDownloadClick, onMediaClick)
                 setHasFixedSize(true)
             }
         }
