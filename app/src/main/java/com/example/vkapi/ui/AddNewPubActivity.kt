@@ -11,7 +11,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.vkapi.App
-import com.example.vkapi.DBHelper
+import com.example.vkapi.utils.DBHelper
 import com.example.vkapi.R
 import com.example.vkapi.models.Pub
 import okhttp3.Request

@@ -10,10 +10,14 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import com.example.vkapi.DBHelper
+import androidx.lifecycle.lifecycleScope
+import com.example.vkapi.utils.DBHelper
 import com.example.vkapi.R
 import com.example.vkapi.models.AppSetting
+import com.example.vkapi.utils.clearAppDownloadedVideos
+import com.example.vkapi.utils.getAppMediaTotalSize
 import com.google.android.material.textfield.TextInputEditText
+import kotlinx.coroutines.launch
 import java.io.File
 
 class AppSettings : AppCompatActivity() {
@@ -45,18 +49,25 @@ class AppSettings : AppCompatActivity() {
             "youtubedl-android"
         )
 
+        lifecycleScope.launch {
+            val size = downloadDir.walkTopDown().filter { it.isFile }.map { it.length() }.sum() + getAppMediaTotalSize(this@AppSettings) / 1024 / 1024
+            stor_view.text = "$size MB"
+        }
+
         back_button.setOnClickListener {
             val intent = Intent(this, MainActivity::class.java)
             startActivity(intent)
         }
 
         clear_btn.setOnClickListener {
-            if (downloadDir.exists() && downloadDir.isDirectory) {
-                downloadDir.listFiles()?.forEach { file ->
-                    file.deleteRecursively() // удаляет каждый файл или подпапку внутри
+            lifecycleScope.launch {
+                if (downloadDir.exists() && downloadDir.isDirectory) {
+                    downloadDir.listFiles()?.forEach { file ->
+                        file.deleteRecursively() // удаляет каждый файл или подпапку внутри
+                    }
                 }
-                val size = downloadDir.walkTopDown().filter { it.isFile }.map { it.length() }.sum() / 1024 / 1024
-                stor_view.text = "$size MB"
+                clearAppDownloadedVideos(this@AppSettings)
+                stor_view.text = "0 MB"
                 Toast.makeText(this@AppSettings, "файлы удаленны", Toast.LENGTH_SHORT).show()
             }
         }

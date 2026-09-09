@@ -12,7 +12,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.vkapi.App
-import com.example.vkapi.DBHelper
+import com.example.vkapi.utils.DBHelper
 import com.example.vkapi.R
 import com.example.vkapi.models.Pub
 import com.example.vkapi.models.PubView

@@ -12,7 +12,7 @@ import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
-import com.example.vkapi.DBHelper
+import com.example.vkapi.utils.DBHelper
 import com.example.vkapi.ui.JsonHolder
 import com.example.vkapi.R
 import com.example.vkapi.ui.WallActivity

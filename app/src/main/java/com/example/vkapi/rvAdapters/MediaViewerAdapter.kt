@@ -1,16 +1,27 @@
 package com.example.vkapi.rvAdapters
 
+import android.util.Log
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.PopupMenu
+import android.widget.PopupWindow
+import android.widget.TextView
+import android.widget.Toast
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.lifecycleScope
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.example.vkapi.R
 import com.example.vkapi.databinding.ItemMediaFullscreenBinding
 import com.example.vkapi.models.MediaItem
 import com.example.vkapi.models.MediaType
+import com.example.vkapi.utils.DBHelper
+import com.example.vkapi.utils.downloadImageToGallery
+import kotlinx.coroutines.launch
 
 class MediaViewerAdapter(
     private val items: List<MediaItem>,

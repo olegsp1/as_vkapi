@@ -1,4 +1,4 @@
-package com.example.vkapi
+package com.example.vkapi.utils
 
 import android.content.ContentValues
 import android.content.Context
